@@ -64,6 +64,12 @@ def dp_least_squares(
     k_classes=None,
 ):
     """Build and solve the differentially private least squares problem.
+    Algorithm attempts to follow the description (Algorithm 3) in:
+    
+    Mehta, H., Krichene, W., Thakurta, A., Kurakin, A., & Cutkosky, A. (2022). 
+    Differentially private image classification from features. 
+    arXiv preprint arXiv:2211.13403.
+    
     Args:
         A: (n, d) matrix of features
         y: (n,) vector of labels
