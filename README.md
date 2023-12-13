@@ -1,4 +1,10 @@
+# Description
+
 Repository of differentially-private methods for learning from features.
+
+# Usage
+## Installation
+`pip install dp-learning-ff`
 
 
 ## Private Prototype Calculation
