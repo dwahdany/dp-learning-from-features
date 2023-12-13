@@ -17,7 +17,7 @@ authors = [
 maintainers = [
   {name = "Dariush Wahdany", email = "dariush.wahdany@aisec.fraunhofer.de"}
 ]
-description = "aaa"
+description = "Repository of differentially-private methods for learning from features."
 readme = "README.md"
 license = {file = "LICENSE"}
 keywords = ["..."]
@@ -30,6 +30,6 @@ classifiers = [
 [project.urls]
 # Homepage = "https://example.com"
 # Documentation = "https://readthedocs.org"
-# Repository = "https://github.com/me/spam.git"
+Repository = "https://github.com/lsc64/dp-learning-from-features.git"
 # "Bug Tracker" = "https://github.com/me/spam/issues"
 # Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
