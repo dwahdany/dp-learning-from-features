@@ -26,7 +26,27 @@ def give_non_private_prototypes(
     return protos
 
 
-def give_private_prototypes(train_preds, train_targets, subsampling, Ps, seed):
+def give_private_prototypes(
+    train_preds: np.ndarray,
+    train_targets: np.ndarray,
+    Ps: np.ndarray[float],
+    seed: int = 42,
+    subsampling: float = 1.0,
+):
+    """Returns a private prototype for each class.
+
+    Args:
+        train_preds (np.ndarray): (n, d)-array containing the predictions of the training set.
+        train_targets (np.ndarray): (n, )-array containing the labels of the training set.
+        Ps (np.ndarray[float]): Array of privacy budget per step in (0,rho)-cZDP. To total privacy cost is the sum of this array. The algorithm will perform len(Ps) steps.
+        seed (int): RNG seed
+        subsampling (float): Ratio in (0, 1] of samples to use
+
+
+
+    Returns:
+        np.ndarray: (k, d)-array containing the private prototypes for each class.
+    """
     targets = np.unique(train_targets)
     train_preds_sorted = np.stack(
         [train_preds[train_targets == target] for target in targets]
