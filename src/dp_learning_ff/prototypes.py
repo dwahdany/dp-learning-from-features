@@ -48,15 +48,16 @@ def give_private_prototypes(
         np.ndarray: (k, d)-array containing the private prototypes for each class.
     """
     targets = np.unique(train_targets)
-    train_preds_sorted = np.stack(
-        [train_preds[train_targets == target] for target in targets]
-    ).copy()
+    train_preds_sorted = [
+        train_preds[train_targets == target].copy() for target in targets
+    ]
     if subsampling < 1.0:
         rng = np.random.default_rng(seed)
-        rng.shuffle(train_preds_sorted, axis=1)
-        train_preds_sorted = train_preds_sorted[
-            :, : int(subsampling * train_preds_sorted.shape[1])
-        ]
+        subsampled = []
+        for M_x in train_preds_sorted:
+            rng.shuffle(M_x, axis=0)
+            subsampled.append(M_x[: int(subsampling * M_x.shape[0])])
+        train_preds_sorted = subsampled
     protos = np.asarray(
         [private_mean(train_preds_sorted[i], Ps) for i, target in enumerate(targets)]
     )

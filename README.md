@@ -17,7 +17,7 @@ num_samples = 100
 dimensionality = 10
 num_classes = 5
 train_preds = np.random.normal(0,1,(num_samples, dimensionality))
-train_targets = np.resize(np.arange(num_classes), num_samples)
+train_targets = np.random.randint(num_classes, size=(num_samples)) # Supports unbalanced classes
 private_prototypes = dp_learning_ff.give_private_prototypes(train_preds, train_targets, Ps)
 >>> private_prototypes.shape
 (5, 10)
