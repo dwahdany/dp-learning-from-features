@@ -33,7 +33,7 @@ def dp_covariance(
     cov = X_clip.T @ X_clip
     # Add Gaussian noise to the matrix
     cov += rng.normal(
-        scale=clipping_norm**2 * noise_multiplier * np.sqrt(k_classes), size=(d,d)
+        scale=clipping_norm**2 * noise_multiplier * np.sqrt(k_classes), size=(d, d)
     )
     return cov
 
@@ -65,11 +65,11 @@ def dp_least_squares(
 ):
     """Build and solve the differentially private least squares problem.
     Algorithm attempts to follow the description (Algorithm 3) in:
-    
-    Mehta, H., Krichene, W., Thakurta, A., Kurakin, A., & Cutkosky, A. (2022). 
-    Differentially private image classification from features. 
+
+    Mehta, H., Krichene, W., Thakurta, A., Kurakin, A., & Cutkosky, A. (2022).
+    Differentially private image classification from features.
     arXiv preprint arXiv:2211.13403.
-    
+
     Args:
         A: (n, d) matrix of features
         y: (n,) vector of labels
@@ -95,7 +95,7 @@ def dp_least_squares(
         A_clip, clipping_norm, noise_multiplier, rng, k_classes=1
     )  # k_classes is always 1 for global G
     targets = np.unique(y)
-    if k_classes == None:
+    if k_classes is None:
         k_classes = np.ones(n, dtype=int)
     else:
         assert len(k_classes) == n  # each sample has a number of positive classes
@@ -116,4 +116,3 @@ def dp_least_squares(
         thetas.append(theta_class)
 
     return np.asarray(thetas)
-
