@@ -17,8 +17,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint
+        pip install edx-lint pylint
         pip install -r requirements.txt
+        edx_lint write pylintrc
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
