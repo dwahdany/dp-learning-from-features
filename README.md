@@ -8,7 +8,7 @@ Repository of differentially-private methods for learning from features.
 
 
 ## Private Prototype Calculation
-1. Set your total privacy budget in (0,rho)-cZDP.
+1. Set your total privacy budget in (0,rho)-zCDP.
 2. Divide your total budget into a budget per step. Good starting values are listed below. The algorithm will perform `len(Ps)` many steps.
 
 ```python
