@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "learning_ff"
+name = "dp_learning_ff"
 version = "0.0.1"
 dependencies = [
   "numpy",

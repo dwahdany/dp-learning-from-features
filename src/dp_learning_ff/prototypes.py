@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-from learning_ff.coinpress import algos
+from dp_learning_ff.coinpress import algos
 
 
 def give_non_private_prototypes(
