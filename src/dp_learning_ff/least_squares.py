@@ -116,3 +116,15 @@ def dp_least_squares(
         thetas.append(theta_class)
 
     return np.asarray(thetas)
+
+def least_squares_classification(observations: np.ndarray, theta: np.ndarray) -> np.ndarray:
+    """Returns the predictions of the least squares classifier.
+    `n` is the number of observations, `d` is the dimension of the observations, and `k` is the number of classes.
+    Args:
+        observations (np.ndarray): (n, d)-array containing the observations.
+        theta (np.ndarray): (k, d)-array containing the least squares solution.
+
+    Returns:
+        np.ndarray: (n, )-array containing the predictions.
+    """
+    return np.argmax(observations @ theta.T, axis=1)
