@@ -22,4 +22,4 @@ jobs:
         edx_lint write pylintrc
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        pylint --recursive=y $(git ls-files '*.py')
