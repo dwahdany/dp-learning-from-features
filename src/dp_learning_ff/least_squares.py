@@ -56,7 +56,7 @@ def dp_least_squares(
     A_clip = clip_features(A, clipping_norm)
 
     G = dp_covariance(
-        A_clip, clipping_norm, noise_multiplier, rng, k_classes=1
+        A_clip, (noise_multiplier * clipping_norm**2), rng,
     )  # k_classes is always 1 for global G
     targets = np.unique(y)
     if k_classes is None:
@@ -71,7 +71,7 @@ def dp_least_squares(
     for i, target in enumerate(targets):
         x_class = A_clip[np.where(y == target)[0]]
         A_class = dp_covariance(
-            x_class, clipping_norm, noise_multiplier, rng, k_classes[i]
+            x_class, (noise_multiplier * np.sqrt(k_classes[i]) * clipping_norm**2), rng, 
         )
         b_class = noisy_sum(x_class, clipping_norm, noise_multiplier, rng, k_classes[i])
         theta_class = (
