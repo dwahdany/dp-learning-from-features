@@ -41,6 +41,7 @@ def dp_least_squares(
         reg_lambda: regularization parameter
         clipping_norm: L2 norm to clip to
         noise_multiplier: noise multiplier for DP-SGD
+        k_classes: Array of positive classes per sample
     Returns:
         x: (d,) vector of weights
     """
