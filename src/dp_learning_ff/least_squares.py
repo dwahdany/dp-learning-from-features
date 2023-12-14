@@ -1,7 +1,6 @@
 import numpy as np
 from .utils import clip_features, dp_covariance
 
-
 def noisy_sum(
     X_clip,
     clipping_norm,
@@ -75,9 +74,7 @@ def dp_least_squares(
             x_class, (noise_multiplier * np.sqrt(k_classes[i]) * clipping_norm**2), rng, 
         )
         b_class = noisy_sum(x_class, clipping_norm, noise_multiplier, rng, k_classes[i])
-        theta_class = (
-            np.linalg.inv(A_class + weight_alpha * G + reg_lambda * np.eye(d)) @ b_class
-        )
+        theta_class = np.linalg.solve(A_class + weight_alpha * G + reg_lambda * np.eye(d), b_class)
         thetas.append(theta_class)
 
     return np.asarray(thetas)
