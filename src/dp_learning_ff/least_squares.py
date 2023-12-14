@@ -69,7 +69,7 @@ def dp_least_squares(
         assert np.min(k_classes) >= 1  # no sample is assigned to less than 1 class
     thetas = []
     for i, target in enumerate(targets):
-        x_class = A[np.where(y == target)[0]]
+        x_class = A_clip[np.where(y == target)[0]]
         A_class = dp_covariance(
             x_class, clipping_norm, noise_multiplier, rng, k_classes[i]
         )
