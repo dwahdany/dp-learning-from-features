@@ -1,5 +1,7 @@
+from typing import Optional
 import numpy as np
 from .utils import clip_features, dp_covariance
+
 
 def noisy_sum(
     X_clip,
@@ -24,7 +26,7 @@ def dp_least_squares(
     clipping_norm,
     noise_multiplier,
     seed=42,
-    k_classes=None,
+    k_classes: Optional[int] = None,
 ):
     """Build and solve the differentially private least squares problem.
     Algorithm attempts to follow the description (Algorithm 3) in:
@@ -40,7 +42,7 @@ def dp_least_squares(
         reg_lambda: regularization parameter
         clipping_norm: L2 norm to clip to
         noise_multiplier: noise multiplier for DP-SGD
-        k_classes: Array of positive classes per sample
+        k_classes: maximum number of positive classes per sample
     Returns:
         x: (d,) vector of weights
     """
@@ -56,7 +58,9 @@ def dp_least_squares(
     A_clip = clip_features(A, clipping_norm)
 
     G = dp_covariance(
-        A_clip, (noise_multiplier * clipping_norm**2), rng,
+        A_clip,
+        (noise_multiplier * clipping_norm**2),
+        rng,
     )  # k_classes is always 1 for global G
     targets = np.unique(y)
     if k_classes is None:
@@ -77,7 +81,9 @@ def dp_least_squares(
             rng,
         )
         b_class = noisy_sum(x_class, clipping_norm, noise_multiplier, rng, k_classes[i])
-        theta_class = np.linalg.solve(A_class + weight_alpha * G + reg_lambda * np.eye(d), b_class)
+        theta_class = np.linalg.solve(
+            A_class + weight_alpha * G + reg_lambda * np.eye(d), b_class
+        )
         thetas.append(theta_class)
 
     return np.asarray(thetas)
