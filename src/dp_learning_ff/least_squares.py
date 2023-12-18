@@ -60,18 +60,21 @@ def dp_least_squares(
     )  # k_classes is always 1 for global G
     targets = np.unique(y)
     if k_classes is None:
-        k_classes = np.ones(n, dtype=int)
+        k_classes = 1
     else:
-        assert len(k_classes) == n  # each sample has a number of positive classes
-        assert np.max(k_classes) <= len(
-            targets
-        )  # no sample is assigned to more than all classes
-        assert np.min(k_classes) >= 1  # no sample is assigned to less than 1 class
+        assert (
+            k_classes < targets
+        ), "K_classes cannot be larger than the number of unique classes"
+        assert (
+            k_classes > 0
+        ), "There must be at least one sample with at least one positive class (k_classes > 0)"
     thetas = []
     for i, target in enumerate(targets):
         x_class = A_clip[np.where(y == target)[0]]
         A_class = dp_covariance(
-            x_class, (noise_multiplier * np.sqrt(k_classes[i]) * clipping_norm**2), rng, 
+            x_class,
+            (noise_multiplier * np.sqrt(k_classes) * clipping_norm**2),
+            rng,
         )
         b_class = noisy_sum(x_class, clipping_norm, noise_multiplier, rng, k_classes[i])
         theta_class = np.linalg.solve(A_class + weight_alpha * G + reg_lambda * np.eye(d), b_class)
