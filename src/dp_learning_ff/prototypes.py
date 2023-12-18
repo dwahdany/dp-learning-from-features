@@ -29,7 +29,7 @@ def give_non_private_prototypes(
 def give_private_prototypes(
     train_preds: np.ndarray,
     train_targets: np.ndarray,
-    Ps: np.ndarray[float],
+    Ps: np.ndarray,
     seed: int = 42,
     subsampling: float = 1.0,
 ):
@@ -38,7 +38,7 @@ def give_private_prototypes(
     Args:
         train_preds (np.ndarray): (n, d)-array containing the predictions of the training set.
         train_targets (np.ndarray): (n, )-array containing the labels of the training set.
-        Ps (np.ndarray[float]): Array of privacy budget per step in (0,rho)-zCDP. To total privacy cost is the sum of this array. The algorithm will perform len(Ps) steps.
+        Ps (np.ndarray): Array of privacy budget per step in (0,rho)-zCDP. To total privacy cost is the sum of this array. The algorithm will perform len(Ps) steps.
         seed (int): RNG seed
         subsampling (float): Ratio in (0, 1] of samples to use
 
