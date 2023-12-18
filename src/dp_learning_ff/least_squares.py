@@ -1,5 +1,7 @@
 from typing import Optional
+
 import numpy as np
+
 from .utils import clip_features, dp_covariance
 
 
@@ -70,17 +72,17 @@ def dp_least_squares(
             k_classes < targets
         ), "K_classes cannot be larger than the number of unique classes"
         assert (
-            k_classes > 0
-        ), "There must be at least one sample with at least one positive class (k_classes > 0)"
+            k_classes >= 1
+        ), "There must be at least one sample with at least one positive class (k_classes > 1)"
     thetas = []
-    for i, target in enumerate(targets):
+    for target in targets:
         x_class = A_clip[np.where(y == target)[0]]
         A_class = dp_covariance(
             x_class,
             (noise_multiplier * np.sqrt(k_classes) * clipping_norm**2),
             rng,
         )
-        b_class = noisy_sum(x_class, clipping_norm, noise_multiplier, rng, k_classes[i])
+        b_class = noisy_sum(x_class, clipping_norm, noise_multiplier, rng, k_classes)
         theta_class = np.linalg.solve(
             A_class + weight_alpha * G + reg_lambda * np.eye(d), b_class
         )
