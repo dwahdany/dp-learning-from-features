@@ -77,11 +77,6 @@ def private_mean(X, Ps, r=None, c=None):
     return mean
 
 
-def roh_of_epsilon_delta(epsilon, delta, c=0):
-    roh = (np.sqrt(epsilon - c + np.log(1 / delta)) - np.sqrt(np.log(1 / delta))) ** 2
-    return roh
-
-
 @dataclass
 class ClassificationScheme(ABC):
     @abstractmethod
