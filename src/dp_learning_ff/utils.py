@@ -8,6 +8,7 @@ def clip_features(x, max_norm):
     x_clip = clip_coef * x
     return x_clip
 
+
 def dp_covariance(
     X_clip,
     noise_std,
@@ -27,7 +28,5 @@ def dp_covariance(
     # Compute the covariance matrix
     cov = X_clip.T @ X_clip
     # Add Gaussian noise to the matrix
-    cov += rng.normal(
-        scale=noise_std, size=(d, d)
-    )
+    cov += rng.normal(scale=noise_std, size=(d, d))
     return cov
