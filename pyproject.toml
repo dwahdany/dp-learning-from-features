@@ -11,7 +11,8 @@ dynamic = ["version"]
 dependencies = [
   "numpy",
   "torch",
-  "scikit-learn"
+  "scikit-learn",
+  "autodp",
 ]
 requires-python = ">=3.8"
 authors = [
@@ -34,5 +35,5 @@ classifiers = [
 # Homepage = "https://example.com"
 # Documentation = "https://readthedocs.org"
 Repository = "https://github.com/lsc64/dp-learning-from-features.git"
-# "Bug Tracker" = "https://github.com/me/spam/issues"
+"Bug Tracker" = "https://github.com/lsc64/dp-learning-from-features/issues"
 # Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
