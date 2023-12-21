@@ -2,7 +2,7 @@
 Privately estimating covariance.
 """
 import torch
-import utils
+from . import utils
 import numpy as np
 import math
 
