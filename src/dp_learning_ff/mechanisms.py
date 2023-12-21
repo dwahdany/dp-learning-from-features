@@ -8,7 +8,14 @@ import math
 
 
 class CoinpressGM(Mechanism):
-    def __init__(self, Ps, name="CoinpressGM"):
+    def __init__(self, Ps: list, name: str = "CoinpressGM"):
+        """
+        Initialize the CoinpressGM object.
+
+        Args:
+            Ps (list): List of privacy costs per step in (0,rho)-zCDP.
+            name (str, optional): Name of the object. Defaults to "CoinpressGM".
+        """
         self.params = {"Ps": Ps}
         self.name = name
         mechanisms = [GaussianMechanism(1 / math.sqrt(2 * p)) for p in Ps]
@@ -20,11 +27,23 @@ class CoinpressGM(Mechanism):
 class ScaledCoinpressGM(CoinpressGM):
     def __init__(
         self,
-        scale,
-        steps,
-        dist: Literal["lin", "exp", "log", "eq"],
+        scale: float,
+        steps: int = 10,
+        dist: Literal["lin", "exp", "log", "eq"] = "exp",
         name="ScaledCoinpressGM",
     ):
+        """
+        Initialize the ScaledCoinpressGM mechanism.
+
+        Args:
+            scale (float): The scaling factor.
+            steps (int): The number of steps.
+            dist (Literal["lin", "exp", "log", "eq"]): The distribution type.
+            ord (float, optional): The order of the distribution. Defaults to 1.
+            name (str, optional): The name of the mechanism. Defaults to "ScaledCoinpressGM".
+        """
+        assert scale > 0, "scale must be positive"
+        assert steps > 0, "steps must be positive"
         self.scale = scale
         if dist == "lin":
             Ps = [scale * (t + 1) for t in range(steps)]
