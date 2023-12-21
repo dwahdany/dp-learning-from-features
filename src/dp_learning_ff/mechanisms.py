@@ -1,7 +1,6 @@
 from typing import Iterable, Literal, Optional
 
 from autodp.autodp_core import Mechanism
-from autodp.calibrator_zoo import eps_delta_calibrator
 from autodp.mechanism_zoo import GaussianMechanism
 from autodp.transformer_zoo import ComposeGaussian
 import math
@@ -62,6 +61,33 @@ class ScaledCoinpressGM(CoinpressGM):
         super().__init__(name=name, Ps=Ps)
 
 
-def calibrate_single_param(mechanism_class, epsilon, delta, p_min=0, p_max=1000):
-    calibrator = eps_delta_calibrator()
-    return calibrator(mechanism_class, epsilon, delta, [p_min, p_max])
+def calibrate_single_param(mechanism_class, epsilon, delta, verbose: bool = False):
+    def obj(x):
+        return mechanism_class(x).get_approxDP(delta)
+
+    x = 1
+    step = 0.5
+    over = obj(x) > epsilon
+    while True:
+        if verbose:
+            print(f"obj({x}) = {obj(x)}")
+        curr_obj = obj(x)
+        if (
+            curr_obj < epsilon
+            and epsilon - curr_obj < 1e-5
+            and (epsilon - curr_obj) / epsilon < 1e-2
+        ):
+            break
+        if curr_obj > epsilon:
+            if not over:
+                step /= 2
+                over = True
+            while x - step <= 0:
+                step /= 2
+            x -= step
+        else:
+            if over:
+                step /= 2
+                over = False
+            x += step
+    return mechanism_class(x)
