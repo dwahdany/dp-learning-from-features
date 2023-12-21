@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Iterable, Literal, Optional
 
 from autodp.autodp_core import Mechanism
 from autodp.calibrator_zoo import eps_delta_calibrator
@@ -32,21 +32,26 @@ class ScaledCoinpressGM(CoinpressGM):
         dist: Literal["lin", "exp", "log", "eq"] = "exp",
         ord: float = 1,
         name="ScaledCoinpressGM",
+        Ps: Optional[Iterable[float]] = None,
     ):
         """
         Initialize the ScaledCoinpressGM mechanism.
 
         Args:
             scale (float): The scaling factor.
-            steps (int): The number of steps.
-            dist (Literal["lin", "exp", "log", "eq"]): The distribution type.
-            ord (float, optional): The order of the distribution. Defaults to 1.
+            steps (int): The number of steps. Ignored if Ps is set. Defaults to 10.
+            dist (Literal["lin", "exp", "log", "eq"]): The distribution type. Ignored if Ps is set. Defaults to "exp".
+            ord (float, optional): The order of the distribution. Ignored if Ps is set. Defaults to 1.
             name (str, optional): The name of the mechanism. Defaults to "ScaledCoinpressGM".
+            Ps (Optional[Iterable[float]], optional): The privacy costs per step. Overwrites steps, dist, ord. Defaults to None.
         """
         assert scale > 0, "scale must be positive"
         assert steps > 0, "steps must be positive"
+
         self.scale = scale
-        if dist == "lin":
+        if Ps is not None:
+            Ps = [scale * p for p in Ps]
+        elif dist == "lin":
             Ps = [math.pow(scale * (t + 1), ord) for t in range(steps)]
         elif dist == "exp":
             Ps = [math.pow(scale * math.exp(t / steps), ord) for t in range(steps)]
