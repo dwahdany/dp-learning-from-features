@@ -30,6 +30,7 @@ class ScaledCoinpressGM(CoinpressGM):
         scale: float,
         steps: int = 10,
         dist: Literal["lin", "exp", "log", "eq"] = "exp",
+        ord: float = 1,
         name="ScaledCoinpressGM",
     ):
         """
@@ -46,11 +47,11 @@ class ScaledCoinpressGM(CoinpressGM):
         assert steps > 0, "steps must be positive"
         self.scale = scale
         if dist == "lin":
-            Ps = [scale * (t + 1) for t in range(steps)]
+            Ps = [math.pow(scale * (t + 1), ord) for t in range(steps)]
         elif dist == "exp":
-            Ps = [scale * math.exp(t / steps) - 1 for t in range(steps)]
+            Ps = [math.pow(scale * math.exp(t / steps), ord) for t in range(steps)]
         elif dist == "log":
-            Ps = [scale * math.log(t + 1) for t in range(steps)]
+            Ps = [math.pow(scale * math.log(t + 1), ord) for t in range(steps)]
         elif dist == "eq":
             Ps = [scale] * steps
         super().__init__(name=name, Ps=Ps)
