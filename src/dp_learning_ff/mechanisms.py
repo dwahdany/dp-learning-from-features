@@ -56,6 +56,6 @@ class ScaledCoinpressGM(CoinpressGM):
         super().__init__(name=name, Ps=Ps)
 
 
-def calibrate(mechanism_class, epsilon, delta, p_min=0, p_max=1000):
+def calibrate_single_param(mechanism_class, epsilon, delta, p_min=0, p_max=1000):
     calibrator = eps_delta_calibrator()
-    return calibrator(mechanism_class, epsilon, delta, p_min, p_max)
+    return calibrator(mechanism_class, epsilon, delta, [p_min, p_max])
