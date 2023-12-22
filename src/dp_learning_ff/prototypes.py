@@ -1,12 +1,13 @@
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Iterable, Optional
-import warnings
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 from dp_learning_ff.coinpress import algos
+
 from .mechanisms import ScaledCoinpressGM, calibrate_single_param
 
 
@@ -164,7 +165,12 @@ class CoinpressPrototyping:
         )
 
         def scaled_mechanism(scale):
-            return ScaledCoinpressGM(scale=scale, Ps=self.Ps, name="ScaledCoinpressGM")
+            return ScaledCoinpressGM(
+                scale=scale,
+                Ps=self.Ps,
+                p_sampling=self.p_sampling,
+                name="ScaledCoinpressGM",
+            )
 
         calibrated_mechanism = calibrate_single_param(
             scaled_mechanism, self.epsilon, self.delta
