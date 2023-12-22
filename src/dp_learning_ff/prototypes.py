@@ -36,7 +36,12 @@ class CoinpressPrototyping:
         if self.mechanism is None:
             raise ValueError("Mechanism not calibrated")
         return give_private_prototypes(
-            train_preds, train_targets, self.mechanism.params["Ps"], seed=self.seed
+            train_preds,
+            train_targets,
+            self.mechanism.params["Ps"],
+            seed=self.seed,
+            subsampling=self.p_sampling,
+            poisson_sampling=True,
         )
 
     @property

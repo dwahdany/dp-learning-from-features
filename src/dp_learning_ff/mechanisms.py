@@ -13,6 +13,7 @@ class CoinpressGM(Mechanism):
 
         Args:
             Ps (list): List of privacy costs per step in (0,rho)-zCDP.
+            p_sampling (float, optional): Probability of sampling. Defaults to 1.
             name (str, optional): Name of the object. Defaults to "CoinpressGM".
         """
         assert p_sampling <= 1, "p_sampling must be <= 1"
@@ -36,6 +37,7 @@ class ScaledCoinpressGM(CoinpressGM):
         steps: int = 10,
         dist: Literal["lin", "exp", "log", "eq"] = "exp",
         ord: float = 1,
+        p_sampling: float = 1,
         name="ScaledCoinpressGM",
         Ps: Optional[Iterable[float]] = None,
     ):
@@ -48,6 +50,7 @@ class ScaledCoinpressGM(CoinpressGM):
             dist (Literal["lin", "exp", "log", "eq"]): The distribution type. Ignored if Ps is set. Defaults to "exp".
             ord (float, optional): The order of the distribution. Ignored if Ps is set. Defaults to 1.
             name (str, optional): The name of the mechanism. Defaults to "ScaledCoinpressGM".
+            p_sampling (float, optional): The probability of sampling. Defaults to 1.
             Ps (Optional[Iterable[float]], optional): The privacy costs per step. Overwrites steps, dist, ord. Defaults to None.
         """
         assert scale > 0, "scale must be positive"
@@ -64,7 +67,7 @@ class ScaledCoinpressGM(CoinpressGM):
             Ps = [math.pow(scale * math.log(t + 1), ord) for t in range(steps)]
         elif dist == "eq":
             Ps = [scale] * steps
-        super().__init__(name=name, Ps=Ps)
+        super().__init__(name=name, p_sampling=p_sampling, Ps=Ps)
 
 
 def calibrate_single_param(mechanism_class, epsilon, delta, verbose: bool = False):
