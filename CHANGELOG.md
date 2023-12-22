@@ -2,6 +2,13 @@
 
 
 
+## v0.0.6 (2023-12-22)
+
+### Fix
+
+* fix(protos): missing subsampling for Ps calibrated ([`133f8eb`](https://github.com/lsc64/dp-learning-from-features/commit/133f8eb97f5c1aeac7a3babac47df42b5d263b5f))
+
+
 ## v0.0.5 (2023-12-22)
 
 ### Documentation
