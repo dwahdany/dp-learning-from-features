@@ -2,12 +2,12 @@ from typing import Iterable, Literal, Optional
 
 from autodp.autodp_core import Mechanism
 from autodp.mechanism_zoo import GaussianMechanism
-from autodp.transformer_zoo import ComposeGaussian
+from autodp.transformer_zoo import ComposeGaussian, AmplificationBySampling
 import math
 
 
 class CoinpressGM(Mechanism):
-    def __init__(self, Ps: list, name: str = "CoinpressGM"):
+    def __init__(self, Ps: list, p_sampling: float = 1, name: str = "CoinpressGM"):
         """
         Initialize the CoinpressGM object.
 
@@ -15,11 +15,17 @@ class CoinpressGM(Mechanism):
             Ps (list): List of privacy costs per step in (0,rho)-zCDP.
             name (str, optional): Name of the object. Defaults to "CoinpressGM".
         """
+        assert p_sampling <= 1, "p_sampling must be <= 1"
+        assert p_sampling > 0, "p_sampling must be positive"
+        assert all(p > 0 for p in Ps), "Ps must be positive"
         self.params = {"Ps": Ps}
         self.name = name
         mechanisms = [GaussianMechanism(1 / math.sqrt(2 * p)) for p in Ps]
         compose = ComposeGaussian()
         mech = compose(mechanisms, [1 for _ in mechanisms])
+        if p_sampling < 1:
+            preprocessing = AmplificationBySampling()
+            mech = preprocessing.amplify(mech, p_sampling)
         self.set_all_representation(mech)
 
 
