@@ -141,6 +141,7 @@ class CoinpressPrototyping:
                 steps=self.steps,
                 dist=self.dist,
                 ord=self.order,
+                p_sampling=self.p_sampling,
                 name="ScaledCoinpressGM",
             )
 
