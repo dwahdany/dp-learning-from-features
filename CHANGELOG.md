@@ -2,6 +2,29 @@
 
 
 
+## v0.0.5 (2023-12-22)
+
+### Documentation
+
+* docs:  coinpress reference ([`5c8bf95`](https://github.com/lsc64/dp-learning-from-features/commit/5c8bf957e5646fc45bc0a9437bec4f885eb33a03))
+
+### Feature
+
+* feat(protos): subsampled prototyping ([`b75a94b`](https://github.com/lsc64/dp-learning-from-features/commit/b75a94b42b01845d360d93fc3fd8a0e2a4b6a94f))
+
+* feat(protos): subsampled mechanism ([`702c4bb`](https://github.com/lsc64/dp-learning-from-features/commit/702c4bb3bf7ddc7f29081f94c7023e06e46f9530))
+
+* feat: binary calibration algorithm ([`bd9bcc2`](https://github.com/lsc64/dp-learning-from-features/commit/bd9bcc2f8750724d90724aca586bb9e98316bfd1))
+
+* feat: support manual step definition ([`21f6dd8`](https://github.com/lsc64/dp-learning-from-features/commit/21f6dd8953a726435de03b6edffc8bd42eba68eb))
+
+### Fix
+
+* fix: pass p_sampling ([`df1f518`](https://github.com/lsc64/dp-learning-from-features/commit/df1f518553ce9de393698dd695c4df0cad1fcf7d))
+
+* fix(protos): pass subsampling ([`74aae5c`](https://github.com/lsc64/dp-learning-from-features/commit/74aae5c1efad1bac6946b1cbc6847f71466e202a))
+
+
 ## v0.0.4-a.3 (2023-12-21)
 
 
