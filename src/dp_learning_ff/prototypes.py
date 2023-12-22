@@ -18,6 +18,7 @@ class CoinpressPrototyping:
         steps: Optional[int] = None,
         dist: Optional[str] = None,
         Ps: Optional[Iterable[float]] = None,
+        p_sampling: Optional[float] = None,
         seed: int = 42,
         order: float = 1,
     ):
@@ -27,6 +28,7 @@ class CoinpressPrototyping:
         self.order = order
         self.steps = steps
         self.Ps = Ps
+        self.p_sampling = p_sampling
         self.seed = seed
         self.mechanism = None
 
@@ -62,6 +64,7 @@ class CoinpressPrototyping:
 
     @delta.setter
     def delta(self, value):
+        assert value is None or value > 0, "delta must be positive"
         self._delta = value
 
     @property
@@ -70,6 +73,13 @@ class CoinpressPrototyping:
 
     @dist.setter
     def dist(self, value):
+        assert value in [
+            "lin",
+            "exp",
+            "log",
+            "eq",
+            None,
+        ], "dist must be in ['lin', 'exp', 'log', 'eq']"
         self._dist = value
 
     @property
@@ -86,7 +96,19 @@ class CoinpressPrototyping:
 
     @steps.setter
     def steps(self, value):
+        assert value is None or value > 0, "steps must be positive"
         self._steps = value
+
+    @property
+    def p_sampling(self):
+        return self._p_sampling
+
+    @p_sampling.setter
+    def p_sampling(self, value):
+        assert value is None or (
+            value > 0 and value <= 1
+        ), "p_sampling must be in (0, 1]"
+        self._p_sampling = value
 
     def try_calibrate(self):
         attrs1 = ["_epsilon", "_delta"]
@@ -94,12 +116,12 @@ class CoinpressPrototyping:
         for attr in attrs1:
             if not hasattr(self, attr) or getattr(self, attr) is None:
                 return
-        if self.Ps is None:
-            for attr in attrs2:
-                if getattr(self, attr) is None:
-                    return
-            return self.calibrate_steps()
-        return self.calibrate_Ps()
+        if self.Ps is not None:  # overwrites attrs2
+            return self.calibrate_Ps()
+        for attr in attrs2:
+            if getattr(self, attr) is None:
+                return
+        return self.calibrate_steps()
 
     def calibrate_steps(self):
         print(
@@ -175,6 +197,7 @@ def give_private_prototypes(
     Ps: np.ndarray,
     seed: int = 42,
     subsampling: float = 1.0,
+    poisson_sampling: bool = True,
 ):
     """Returns a private prototype for each class.
 
@@ -198,8 +221,13 @@ def give_private_prototypes(
         rng = np.random.default_rng(seed)
         subsampled = []
         for M_x in train_preds_sorted:
-            rng.shuffle(M_x, axis=0)
-            subsampled.append(M_x[: int(subsampling * M_x.shape[0])])
+            if poisson_sampling:
+                occurences = rng.poisson(lam=subsampling, size=M_x.shape[0])
+                subsampled_indices = np.arange(M_x.shape[0]).repeat(occurences)
+                subsampled.append(M_x[subsampled_indices])
+            else:
+                rng.shuffle(M_x, axis=0)
+                subsampled.append(M_x[: int(subsampling * M_x.shape[0])])
         train_preds_sorted = subsampled
     protos = np.asarray(
         [private_mean(train_preds_sorted[i], Ps) for i, target in enumerate(targets)]
