@@ -39,3 +39,17 @@ array([[-1.08239659,  0.50517265,  0.46295668,  0.11665974, -0.41539363,
        [ 1.12158357,  0.17188541, -0.2582887 , -0.2140504 ,  0.06759121,
         -0.26975582, -0.46858189,  0.67295234,  0.64183255, -0.10445519]])
 ```
+
+# Acknowledgements
+Prototype Calculations use the coinpress algorithm from the paper [CoinPress: Practical Private Mean and Covariance Estimation](https://arxiv.org/abs/2006.06618), authored by [Sourav Biswas](https://sravb.github.io/), [Yihe Dong](https://yihedong.me/), [Gautam Kamath](http://www.gautamkamath.com/), [Jonathan Ullman](http://www.ccs.neu.edu/home/jullman/).
+Code contributed by all four authors. 
+```
+@incollection{BiswasDKU20,
+  title         = {CoinPress: Practical Private Mean and Covariance Estimation},
+  author        = {Biswas, Sourav and Dong, Yihe and Kamath, Gautam and Ullman, Jonathan},
+  booktitle = {Advances in Neural Information Processing Systems 33},
+  url       = {arXiv preprint arXiv:2006.06618},
+  year          = {2020}
+}
+```
+
