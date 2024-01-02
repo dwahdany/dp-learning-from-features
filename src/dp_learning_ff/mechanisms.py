@@ -1,9 +1,9 @@
+import math
 from typing import Iterable, Literal, Optional
 
 from autodp.autodp_core import Mechanism
-from autodp.mechanism_zoo import GaussianMechanism
-from autodp.transformer_zoo import ComposeGaussian, AmplificationBySampling
-import math
+from autodp.mechanism_zoo import GaussianMechanism, zCDP_Mechanism
+from autodp.transformer_zoo import AmplificationBySampling, ComposeGaussian
 
 
 class CoinpressGM(Mechanism):
@@ -68,6 +68,19 @@ class ScaledCoinpressGM(CoinpressGM):
         elif dist == "eq":
             Ps = [scale] * steps
         super().__init__(name=name, p_sampling=p_sampling, Ps=Ps)
+
+
+class LeastSquaresCDPM(Mechanism):
+    def __init__(self, noise_multiplier, p_sampling: float = 1, name="LeastSquares"):
+        assert noise_multiplier > 0, "noise_multiplier must be positive"
+        assert p_sampling <= 1, "p_sampling must be <= 1"
+        assert p_sampling > 0, "p_sampling must be positive"
+        self.params = {"noise_multiplier": noise_multiplier}
+        mechanism = zCDP_Mechanism(rho=3 / (2 * noise_multiplier**2), xi=0)
+        if p_sampling < 1:
+            preprocessing = AmplificationBySampling()
+            mechanism = preprocessing.amplify(mechanism, p_sampling)
+        self.set_all_representation(mechanism)
 
 
 def calibrate_single_param(mechanism_class, epsilon, delta, verbose: bool = False):
