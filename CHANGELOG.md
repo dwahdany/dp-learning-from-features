@@ -2,6 +2,13 @@
 
 
 
+## v0.1.0 (2024-01-02)
+
+### Feature
+
+* feat(LS): mechanism ([`e5bfce2`](https://github.com/lsc64/dp-learning-from-features/commit/e5bfce252ed7352800d9ee0501ead00565424abf))
+
+
 ## v0.0.6 (2023-12-22)
 
 ### Fix
