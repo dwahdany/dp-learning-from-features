@@ -2,6 +2,17 @@
 
 
 
+## v0.0.8 (2024-01-03)
+
+### Fix
+
+* fix: export LS classifier ([`dbf31f4`](https://github.com/lsc64/dp-learning-from-features/commit/dbf31f49c84f8ad0ed260e2279ac7345ca1751ad))
+
+### Refactor
+
+* refactor: semantic settings ([`b07818f`](https://github.com/lsc64/dp-learning-from-features/commit/b07818fec9ce3ed2a8bb7169a4f72cf5a549b758))
+
+
 ## v0.0.7 (2024-01-02)
 
 ### Feature
