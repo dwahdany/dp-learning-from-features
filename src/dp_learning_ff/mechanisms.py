@@ -1,6 +1,7 @@
 import math
 from typing import Iterable, Literal, Optional
 
+import numpy as np
 from autodp.autodp_core import Mechanism
 from autodp.mechanism_zoo import GaussianMechanism, zCDP_Mechanism
 from autodp.transformer_zoo import AmplificationBySampling, ComposeGaussian
@@ -92,3 +93,45 @@ def calibrate_single_param(mechanism_class, epsilon, delta, verbose: bool = Fals
     scale = binary_optimize(obj, epsilon, verbose=verbose)
     return mechanism_class(scale)
 
+
+def approxzCDP_to_approxDP(
+    rho: float,
+    xi: float,
+    delta_zcdp: float,
+    epsilon: Optional[float] = None,
+    delta: Optional[float] = None,
+    return_tuple: bool = False,
+):
+    assert epsilon >= xi + rho, "epsilon must be >= xi + rho"
+    if epsilon is None and delta is None:
+        raise ValueError("Either epsilon or delta must be set")
+    if epsilon is not None and delta is not None:
+        raise ValueError("Only one of epsilon and delta must be set")
+    if delta is None:
+        excess_epsilon = epsilon - xi - rho
+        scaled_excess_epsilon = excess_epsilon / (2 * rho)
+        delta_excess = np.exp(-((excess_epsilon) ** 2) / (4 * rho)) * min(
+            1,
+            np.sqrt(np.pi * rho),
+            1 / (1.0 + scaled_excess_epsilon),
+            2
+            / (
+                1.0
+                + scaled_excess_epsilon
+                + np.sqrt((1.0 + scaled_excess_epsilon) ** 2 + 4 / (np.pi * rho))
+            ),
+        )
+        delta = delta_zcdp + (1 - delta_zcdp) * delta_excess
+        if not return_tuple:
+            return delta
+    else:
+
+        def obj(x):
+            return approxzCDP_to_approxDP(
+                rho, xi, delta_zcdp, epsilon=x, return_tuple=False
+            )
+
+        epsilon = binary_optimize(obj, delta)
+        if not return_tuple:
+            return epsilon
+    return epsilon, delta
