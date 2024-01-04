@@ -5,6 +5,8 @@ from autodp.autodp_core import Mechanism
 from autodp.mechanism_zoo import GaussianMechanism, zCDP_Mechanism
 from autodp.transformer_zoo import AmplificationBySampling, ComposeGaussian
 
+from .utils import binary_optimize
+
 
 class CoinpressGM(Mechanism):
     def __init__(self, Ps: list, p_sampling: float = 1, name: str = "CoinpressGM"):
@@ -87,29 +89,6 @@ def calibrate_single_param(mechanism_class, epsilon, delta, verbose: bool = Fals
     def obj(x):
         return mechanism_class(x).get_approxDP(delta)
 
-    x = 1
-    step = 0.5
-    over = obj(x) > epsilon
-    while True:
-        if verbose:
-            print(f"obj({x}) = {obj(x)}")
-        curr_obj = obj(x)
-        if (
-            curr_obj < epsilon
-            and epsilon - curr_obj < 1e-5
-            and (epsilon - curr_obj) / epsilon < 1e-2
-        ):
-            break
-        if curr_obj > epsilon:
-            if not over:
-                step /= 2
-                over = True
-            while x - step <= 0:
-                step /= 2
-            x -= step
-        else:
-            if over:
-                step /= 2
-                over = False
-            x += step
-    return mechanism_class(x)
+    scale = binary_optimize(obj, epsilon, verbose=verbose)
+    return mechanism_class(scale)
+
