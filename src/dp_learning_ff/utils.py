@@ -38,6 +38,7 @@ def binary_optimize(
     f,
     target: float,
     f_monotonicity: Literal["positive", "negative"] = "positive",
+    strictly: Literal["none", "lower", "upper", "leq", "geq"] = "none",
     abs_tol: float = 1e-5,
     rel_tol: float = 1e-2,
     min_param: float = 0,
@@ -84,13 +85,29 @@ def binary_optimize(
         else:
             return f(x) < target
 
+    def strictness_comp(
+        curr_obj: float,
+        target: float,
+        strictly: Literal["none", "lower", "upper", "leq", "geq"],
+    ) -> bool:
+        if strictly == "lower":
+            return curr_obj < target
+        elif strictly == "upper":
+            return curr_obj > target
+        elif strictly == "leq":
+            return curr_obj <= target
+        elif strictly == "geq":
+            return curr_obj >= target
+        else:
+            return True
+
     it = 0
     while True:
         if verbose:
             print(f"obj({x}) = {f(x)}")
         curr_obj = f(x)
         if (
-            curr_obj < target
+            strictness_comp(curr_obj, target, strictly)
             and target - curr_obj < abs_tol
             and (target - curr_obj) / target < rel_tol
         ):
