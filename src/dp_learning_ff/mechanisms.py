@@ -102,12 +102,12 @@ def approxzCDP_to_approxDP(
     delta: Optional[float] = None,
     return_tuple: bool = False,
 ):
-    assert epsilon >= xi + rho, "epsilon must be >= xi + rho"
     if epsilon is None and delta is None:
         raise ValueError("Either epsilon or delta must be set")
     if epsilon is not None and delta is not None:
         raise ValueError("Only one of epsilon and delta must be set")
     if delta is None:
+        assert epsilon >= xi + rho, "epsilon must be >= xi + rho"
         excess_epsilon = epsilon - xi - rho
         scaled_excess_epsilon = excess_epsilon / (2 * rho)
         delta_excess = np.exp(-((excess_epsilon) ** 2) / (4 * rho)) * min(
@@ -125,6 +125,8 @@ def approxzCDP_to_approxDP(
         if not return_tuple:
             return delta
     else:
+        assert delta <= 1, "delta must be <= 1"
+        assert delta > 0, "delta must be > 0"
 
         def obj(x):
             return approxzCDP_to_approxDP(
