@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 
 
@@ -35,6 +37,7 @@ def dp_covariance(
 def binary_optimize(
     f,
     target: float,
+    f_monotonicity: Literal["positive", "negative"] = "positive",
     abs_tol: float = 1e-5,
     rel_tol: float = 1e-2,
     min_param: float = 0,
@@ -62,6 +65,25 @@ def binary_optimize(
         else:
             return x <= min_param
 
+    def monotonicity_comp(
+        x: float, target: float, f_monotonicity: Literal["positive", "negative"]
+    ) -> bool:
+        """Return true if we need to decrease x to get closer to target.
+
+
+        Args:
+            x (float): Current value of x
+            target (float): Target value of f(x)
+            f_monotonicity (Literal["positive", "negative"]): Whether f is increasing or decreasing over x
+
+        Returns:
+            bool: True if we need to decrease x to get closer to target, False if we need to increase x to get closer to target
+        """
+        if f_monotonicity == "positive":
+            return f(x) > target
+        else:
+            return f(x) < target
+
     it = 0
     while True:
         if verbose:
@@ -73,7 +95,7 @@ def binary_optimize(
             and (target - curr_obj) / target < rel_tol
         ):
             break
-        if curr_obj > target:
+        if monotonicity_comp(x, target, f_monotonicity):
             if not over:
                 step /= 2
                 over = True
