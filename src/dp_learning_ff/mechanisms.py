@@ -90,7 +90,9 @@ def calibrate_single_param(mechanism_class, epsilon, delta, verbose: bool = Fals
     def obj(x):
         return mechanism_class(x).get_approxDP(delta)
 
-    scale = binary_optimize(obj, epsilon, verbose=verbose)
+    scale = binary_optimize(
+        obj, epsilon, verbose=verbose, min_open=True, f_monotonicity="negative"
+    )
     return mechanism_class(scale)
 
 
