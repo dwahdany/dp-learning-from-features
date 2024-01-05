@@ -119,8 +119,8 @@ def binary_optimize(
         curr_obj = f(x)
         if (
             strictness_comp(curr_obj, target, strictly)
-            and target - curr_obj < abs_tol
-            and (target - curr_obj) / target < rel_tol
+            and abs(target - curr_obj) < abs_tol
+            and abs((target - curr_obj) / target) < rel_tol
         ):
             break
         if monotonicity_comp(x, target, f_monotonicity):
