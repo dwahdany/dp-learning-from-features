@@ -15,6 +15,7 @@ class LeastSquaresClassifier:
         clipping_norm,
         reg_lambda,
         weight_alpha,
+        p_sampling: float = 1.0,
         seed: int = 42,
         k_classes: Optional[int] = None,
     ) -> None:
@@ -25,6 +26,7 @@ class LeastSquaresClassifier:
         self.weight_alpha = weight_alpha
         self.seed = seed
         self.k_classes = k_classes
+        self.p_sampling = p_sampling
         self.mechanism = None
 
     @property
