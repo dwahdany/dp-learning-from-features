@@ -64,7 +64,7 @@ class LeastSquaresClassifier:
                 return
         return self.calibrate()
 
-    def calibrate(self):
+    def calibrate(self, verbose: bool = False):
         print(
             "Calibrating mechanism to epsilon={}, delta={}".format(
                 self.epsilon,
@@ -79,12 +79,12 @@ class LeastSquaresClassifier:
             )
 
         calibrated_mechanism = calibrate_single_param(
-            scaled_mechanism, self.epsilon, self.delta
+            scaled_mechanism, self.epsilon, self.delta, verbose=verbose
         )
         epsilon = calibrated_mechanism.get_approxDP(self.delta)
         print(
-            "Calibrated mechanism with epsilon={}, scale={}, params={},".format(
-                epsilon, calibrated_mechanism.scale, calibrated_mechanism.params
+            "Calibrated mechanism with epsilon={}, params={},".format(
+                epsilon, calibrated_mechanism.params
             )
         )
         self.mechanism = calibrated_mechanism
