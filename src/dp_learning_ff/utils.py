@@ -55,16 +55,27 @@ def binary_optimize(
     over = f(x) > target
 
     def max_comp(x, max_param, max_open):
+        """Return true if x is greater than max_param (or equal if max_open is True)
+
+        Args:
+            x (_type_): _description_
+            max_param (_type_): _description_
+            max_open (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         if max_open:
-            return x > max_param
-        else:
             return x >= max_param
+        else:
+            return x > max_param
 
     def min_comp(x, min_param, min_open):
+        """Return true if x is smaller than min_param (or equal if min_open is True)"""
         if min_open:
-            return x < min_param
-        else:
             return x <= min_param
+        else:
+            return x < min_param
 
     def monotonicity_comp(
         x: float, target: float, f_monotonicity: Literal["positive", "negative"]
