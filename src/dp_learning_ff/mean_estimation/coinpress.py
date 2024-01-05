@@ -15,7 +15,7 @@ class CoinpressPrototyping:
         steps: Optional[int] = None,
         dist: Optional[str] = None,
         Ps: Optional[Iterable[float]] = None,
-        p_sampling: Optional[float] = None,
+        p_sampling: float = 1,
         seed: int = 42,
         order: float = 1,
     ):
