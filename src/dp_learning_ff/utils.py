@@ -1,6 +1,11 @@
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
+from lightning.pytorch import LightningModule, Trainer
+from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+from lightning.pytorch.utilities.types import (
+    STEP_OUTPUT,
+)
 
 
 def clip_features(x, max_norm):
@@ -141,3 +146,22 @@ def binary_optimize(
         if it > steps:
             raise RuntimeError("binary_optimize did not converge")
     return x
+
+
+class ImmediateEarlyStop(EarlyStopping):
+    def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+        pass
+
+    def on_train_batch_end(
+        self,
+        trainer: Trainer,
+        pl_module: LightningModule,
+        outputs: STEP_OUTPUT,
+        batch: Any,
+        batch_idx: int,
+    ) -> None:
+        try:
+            self._run_early_stopping_check(trainer)
+        except Exception as e:
+            print(e)
+        return super().on_train_batch_end(trainer, pl_module, outputs, batch, batch_idx)
