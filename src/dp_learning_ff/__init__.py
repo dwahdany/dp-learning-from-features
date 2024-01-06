@@ -1,9 +1,10 @@
 from . import ext, mechanisms
 from .least_squares import LeastSquaresClassifier
-from .mean_estimation.coinpress import give_private_prototypes
+from .linear_probing import LinearProbingClassifier
 
 __all__ = [
     "LeastSquaresClassifier",
+    "LinearProbingClassifier",
     "give_private_prototypes",
     "ext",
     "mechanisms",
