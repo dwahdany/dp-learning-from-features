@@ -42,7 +42,6 @@ def dp_covariance(
 def binary_optimize(
     f,
     target: float,
-    f_monotonicity: Literal["positive", "negative"] = "positive",
     strictly: Literal["none", "lower", "upper", "leq", "geq"] = "none",
     abs_tol: float = 1e-5,
     rel_tol: float = 1e-2,
@@ -55,11 +54,7 @@ def binary_optimize(
     initial_step: float = 0.5,
     steps: int = 1000,
 ):
-    x = initial
-    step = initial_step
-    over = f(x) > target
-
-    def max_comp(x, max_param, max_open):
+    def max_violated(x, max_param, max_open):
         """Return true if x is greater than max_param (or equal if max_open is True)
 
         Args:
@@ -75,7 +70,7 @@ def binary_optimize(
         else:
             return x > max_param
 
-    def min_comp(x, min_param, min_open):
+    def min_violated(x, min_param, min_open):
         """Return true if x is smaller than min_param (or equal if min_open is True)"""
         if min_open:
             return x <= min_param
@@ -101,7 +96,7 @@ def binary_optimize(
         else:
             return f(x) < target
 
-    def strictness_comp(
+    def strictness_ok(
         curr_obj: float,
         target: float,
         strictly: Literal["none", "lower", "upper", "leq", "geq"],
@@ -117,13 +112,44 @@ def binary_optimize(
         else:
             return True
 
+    def check_monotonicity(f, max_param, min_param):
+        if min_param == -np.inf:
+            if max_param == np.inf:
+                a = -5
+            else:
+                a = max_param - max(0.5 * abs(max_param), 5)
+        else:
+            a = min_param
+        if max_param == np.inf:
+            if min_param == -np.inf:
+                b = 5
+            else:
+                b = min_param + max(0.5 * abs(min_param), 5)
+        else:
+            b = max_param
+        points = np.linspace(a, b, 4)
+        if f(points[1]) < f(points[2]):
+            return "positive"
+        else:
+            return "negative"
+
+    x = initial
+    step = initial_step
+    over = f(x) > target
+    assert not min_violated(
+        x, min_param, min_open
+    ), f"Initial {x} is smaller than min_param {min_param} (or equal if min_open is True)"
+    assert not max_violated(
+        x, max_param, max_open
+    ), f"Initial {x} is greater than max_param {max_param} (or equal if max_open is True)"
+    f_monotonicity = check_monotonicity(f, max_param, min_param)
     it = 0
     while True:
         if verbose:
             print(f"obj({x}) = {f(x)}")
         curr_obj = f(x)
         if (
-            strictness_comp(curr_obj, target, strictly)
+            strictness_ok(curr_obj, target, strictly)
             and abs(target - curr_obj) < abs_tol
             and abs((target - curr_obj) / target) < rel_tol
         ):
@@ -132,14 +158,14 @@ def binary_optimize(
             if not over:
                 step /= 2
                 over = True
-            while min_comp(x - step, min_param, min_open):
+            while min_violated(x - step, min_param, min_open):
                 step /= 2
             x -= step
         else:
             if over:
                 step /= 2
                 over = False
-            while max_comp(x + step, max_param, max_open):
+            while max_violated(x + step, max_param, max_open):
                 step /= 2
             x += step
         it += 1
