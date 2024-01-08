@@ -16,8 +16,10 @@ class CoinpressPrototyping:
         dist: Optional[str] = None,
         Ps: Optional[Iterable[float]] = None,
         p_sampling: float = 1,
+        sample_each_step: bool = False,
         seed: int = 42,
         order: float = 1,
+        verbose: bool = False,
     ):
         self.epsilon = epsilon
         self.delta = delta
@@ -26,8 +28,10 @@ class CoinpressPrototyping:
         self.steps = steps
         self.Ps = Ps
         self.p_sampling = p_sampling
+        self.sample_each_step = sample_each_step
         self.seed = seed
         self.mechanism = None
+        self.verbose = verbose
 
     def prototypes(self, train_preds, train_targets):
         if self.mechanism is None:
@@ -38,6 +42,7 @@ class CoinpressPrototyping:
             self.mechanism.params["Ps"],
             seed=self.seed,
             subsampling=self.p_sampling,
+            sample_each_step=self.sample_each_step,
             poisson_sampling=True,
         )
 
@@ -139,11 +144,12 @@ class CoinpressPrototyping:
                 dist=self.dist,
                 ord=self.order,
                 p_sampling=self.p_sampling,
+                sample_each_step=self.sample_each_step,
                 name="ScaledCoinpressGM",
             )
 
         calibrated_mechanism = calibrate_single_param(
-            scaled_mechanism, self.epsilon, self.delta
+            scaled_mechanism, self.epsilon, self.delta, verbose=self.verbose
         )
         epsilon = calibrated_mechanism.get_approxDP(self.delta)
         print(
@@ -165,11 +171,12 @@ class CoinpressPrototyping:
                 scale=scale,
                 Ps=self.Ps,
                 p_sampling=self.p_sampling,
+                sample_each_step=self.sample_each_step,
                 name="ScaledCoinpressGM",
             )
 
         calibrated_mechanism = calibrate_single_param(
-            scaled_mechanism, self.epsilon, self.delta
+            scaled_mechanism, self.epsilon, self.delta, verbose=self.verbose
         )
         epsilon = calibrated_mechanism.get_approxDP(self.delta)
         print(
@@ -205,6 +212,7 @@ def give_private_prototypes(
     Ps: np.ndarray,
     seed: int = 42,
     subsampling: float = 1.0,
+    sample_each_step: bool = False,
     poisson_sampling: bool = True,
 ):
     """Returns a private prototype for each class.
@@ -221,6 +229,8 @@ def give_private_prototypes(
     Returns:
         np.ndarray: (k, d)-array containing the private prototypes for each class.
     """
+    if sample_each_step:
+        raise NotImplementedError("Sampling each step is not implemented")
     targets = np.unique(train_targets)
     train_preds_sorted = [
         train_preds[train_targets == target].copy() for target in targets

@@ -4,13 +4,19 @@ from typing import Iterable, Literal, Optional
 import numpy as np
 from autodp.autodp_core import Mechanism
 from autodp.mechanism_zoo import GaussianMechanism, zCDP_Mechanism
-from autodp.transformer_zoo import AmplificationBySampling, ComposeGaussian
+from autodp.transformer_zoo import AmplificationBySampling, ComposeGaussian, Composition
 
 from .utils import binary_optimize
 
 
 class CoinpressGM(Mechanism):
-    def __init__(self, Ps: list, p_sampling: float = 1, name: str = "CoinpressGM"):
+    def __init__(
+        self,
+        Ps: list,
+        p_sampling: float = 1,
+        sample_each_step: bool = False,
+        name: str = "CoinpressGM",
+    ):
         """
         Initialize the CoinpressGM object.
 
@@ -28,8 +34,16 @@ class CoinpressGM(Mechanism):
         compose = ComposeGaussian()
         mech = compose(mechanisms, [1 for _ in mechanisms])
         if p_sampling < 1:
-            preprocessing = AmplificationBySampling()
-            mech = preprocessing.amplify(mech, p_sampling)
+            preprocessing = AmplificationBySampling(PoissonSampling=True)
+            if sample_each_step:
+                compose = Composition()
+                mechanisms = [
+                    preprocessing.amplify(mech, p_sampling, improved_bound_flag=True)
+                    for mech in mechanisms
+                ]
+                mech = compose(mechanisms, [1 for _ in mechanisms])
+            else:
+                mech = preprocessing.amplify(mech, p_sampling)
         self.set_all_representation(mech)
 
 
@@ -41,6 +55,7 @@ class ScaledCoinpressGM(CoinpressGM):
         dist: Literal["lin", "exp", "log", "eq"] = "exp",
         ord: float = 1,
         p_sampling: float = 1,
+        sample_each_step: bool = False,
         name="ScaledCoinpressGM",
         Ps: Optional[Iterable[float]] = None,
     ):
@@ -60,6 +75,7 @@ class ScaledCoinpressGM(CoinpressGM):
         assert steps > 0, "steps must be positive"
 
         self.scale = scale
+        self.sample_each_step = sample_each_step
         if Ps is not None:
             Ps = [scale * p for p in Ps]
         elif dist == "lin":
@@ -70,7 +86,9 @@ class ScaledCoinpressGM(CoinpressGM):
             Ps = [math.pow(scale * math.log(t + 1), ord) for t in range(steps)]
         elif dist == "eq":
             Ps = [scale] * steps
-        super().__init__(name=name, p_sampling=p_sampling, Ps=Ps)
+        super().__init__(
+            name=name, p_sampling=p_sampling, sample_each_step=sample_each_step, Ps=Ps
+        )
 
 
 class LeastSquaresCDPM(Mechanism):
