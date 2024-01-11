@@ -1,6 +1,7 @@
 import warnings
 from typing import Any, Optional
 
+import numpy as np
 import torch
 from lightning import LightningModule
 from lightning.pytorch.utilities.types import (
@@ -45,26 +46,31 @@ class LinearProbingClassifier(LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.parameters(), lr=self.lr, momentum=0)
-        self.trainer.fit_loop.setup_data()
-        data_loader = self.trainer.train_dataloader
-        # transform (model, optimizer, dataloader) to DP-versions
-        if hasattr(self, "dp"):
-            self.dp["model"].remove_hooks()
-        if not isinstance(data_loader, DPDataLoader):
-            warnings.warn(
-                "Dataloader is not DPDataLoader. Manually adjust sampling or privacy guarantees are violated."
+        if self.epsilon < np.inf and self.delta < 1:
+            self.trainer.fit_loop.setup_data()
+            data_loader = self.trainer.train_dataloader
+            # transform (model, optimizer, dataloader) to DP-versions
+            if hasattr(self, "dp"):
+                self.dp["model"].remove_hooks()
+            if not isinstance(data_loader, DPDataLoader):
+                warnings.warn(
+                    "Dataloader is not DPDataLoader. Manually adjust sampling or privacy guarantees are violated."
+                )
+            (
+                dp_model,
+                optimizer,
+                dataloader,
+            ) = self.privacy_engine.make_private_with_epsilon(
+                module=self,
+                optimizer=optimizer,
+                data_loader=data_loader,
+                target_epsilon=self.epsilon,
+                target_delta=self.delta,
+                epochs=self.epochs,
+                max_grad_norm=self.max_grad_norm,
+                poisson_sampling=isinstance(data_loader, DPDataLoader),
             )
-        dp_model, optimizer, dataloader = self.privacy_engine.make_private_with_epsilon(
-            module=self,
-            optimizer=optimizer,
-            data_loader=data_loader,
-            target_epsilon=self.epsilon,
-            target_delta=self.delta,
-            epochs=self.epochs,
-            max_grad_norm=self.max_grad_norm,
-            poisson_sampling=isinstance(data_loader, DPDataLoader),
-        )
-        self.dp = {"model": dp_model}
+            self.dp = {"model": dp_model}
 
         return optimizer
 
@@ -99,6 +105,7 @@ class LinearProbingClassifier(LightningModule):
         self, outputs: STEP_OUTPUT, batch: Any, batch_idx: int
     ) -> None:
         # Logging privacy spent: (epsilon, delta)
-        epsilon = self.privacy_engine.get_epsilon(self.delta)
-        self.log("epsilon", epsilon, on_epoch=True, prog_bar=True)
+        if self.epsilon < np.inf and self.delta < 1:
+            epsilon = self.privacy_engine.get_epsilon(self.delta)
+            self.log("epsilon", epsilon, on_epoch=True, prog_bar=True)
         return super().on_train_batch_end(outputs, batch, batch_idx)
