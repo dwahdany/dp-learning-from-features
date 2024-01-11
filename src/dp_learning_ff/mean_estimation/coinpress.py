@@ -1,46 +1,50 @@
 import warnings
+from dataclasses import dataclass
 from typing import Iterable, Optional
 
 import numpy as np
+from autodp.autodp_core import Mechanism
 
 from dp_learning_ff.ext.coinpress import algos
-from dp_learning_ff.mechanisms import ScaledCoinpressGM, calibrate_single_param
+from dp_learning_ff.mechanisms import (
+    CoinpressGM,
+    ScaledCoinpressGM,
+    calibrate_single_param,
+)
 
 
+@dataclass
 class CoinpressPrototyping:
-    def __init__(
-        self,
-        epsilon: Optional[float],
-        delta: Optional[float] = None,
-        steps: Optional[int] = None,
-        dist: Optional[str] = None,
-        Ps: Optional[Iterable[float]] = None,
-        p_sampling: float = 1,
-        sample_each_step: bool = False,
-        seed: int = 42,
-        order: float = 1,
-        verbose: bool = False,
-    ):
-        self.epsilon = epsilon
-        self.delta = delta
-        self.dist = dist
-        self.order = order
-        self.steps = steps
-        self.Ps = Ps
-        self.p_sampling = p_sampling
-        self.sample_each_step = sample_each_step
-        self.seed = seed
-        self.mechanism = None
-        self.verbose = verbose
+    _epsilon: Optional[float] = None
+    _delta: Optional[float] = None
+    _steps: Optional[int] = None
+    _dist: Optional[str] = None
+    Ps: Optional[Iterable[float]] = None
+    _p_sampling: float = 1
+    sample_each_step: bool = False
+    seed: int = 42
+    _order: float = 1
+    calibrated: bool = False
+    verbose: bool = False
+    _mechanism: Mechanism = None
 
-    def prototypes(self, train_preds, train_targets):
+    def __post_init__(self):
+        if self.calibrated:
+            self.mechanism = CoinpressGM(
+                self.Ps, self.p_sampling, self.sample_each_step
+            )
+
+    def prototypes(
+        self, train_preds, train_targets, overwrite_seed: Optional[int] = None
+    ):
         if self.mechanism is None:
             raise ValueError("Mechanism not calibrated")
+        seed = self.seed if overwrite_seed is None else overwrite_seed
         return give_private_prototypes(
             train_preds,
             train_targets,
             self.mechanism.params["Ps"],
-            seed=self.seed,
+            seed=seed,
             subsampling=self.p_sampling,
             sample_each_step=self.sample_each_step,
             poisson_sampling=True,
@@ -63,6 +67,10 @@ class CoinpressPrototyping:
 
     @epsilon.setter
     def epsilon(self, value):
+        print(value)
+        assert (
+            (value > 0) if value is not None else True
+        ), f"epsilon must be positive, but received {value}"
         self._epsilon = value
 
     @property
@@ -71,7 +79,7 @@ class CoinpressPrototyping:
 
     @delta.setter
     def delta(self, value):
-        assert value is None or value > 0, "delta must be positive"
+        assert (value > 0) if value is not None else True, "delta must be positive"
         self._delta = value
 
     @property
@@ -103,7 +111,7 @@ class CoinpressPrototyping:
 
     @steps.setter
     def steps(self, value):
-        assert value is None or value > 0, "steps must be positive"
+        assert (value > 0) if value is not None else True, "steps must be positive"
         self._steps = value
 
     @property
@@ -112,8 +120,8 @@ class CoinpressPrototyping:
 
     @p_sampling.setter
     def p_sampling(self, value):
-        assert value is None or (
-            value > 0 and value <= 1
+        assert (
+            (value > 0 and value <= 1) if value is not None else True
         ), "p_sampling must be in (0, 1]"
         self._p_sampling = value
 
@@ -185,25 +193,6 @@ class CoinpressPrototyping:
             )
         )
         self.mechanism = calibrated_mechanism
-
-
-def give_non_private_prototypes(
-    train_preds, train_targets: np.ndarray, subsampling, seed
-):
-    targets = np.unique(train_targets)
-    train_preds_sorted = np.stack(
-        [train_preds[train_targets == target] for target in targets]
-    ).copy()
-    if subsampling < 1.0:
-        rng = np.random.default_rng(seed)
-        rng.shuffle(train_preds_sorted, axis=1)
-        train_preds_sorted = train_preds_sorted[
-            :, : int(subsampling * train_preds_sorted.shape[1])
-        ]
-    protos = np.asarray(
-        [train_preds_sorted[i].mean(axis=0) for i, target in enumerate(targets)]
-    )
-    return protos
 
 
 def give_private_prototypes(

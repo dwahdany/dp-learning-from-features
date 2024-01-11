@@ -6,7 +6,50 @@ from autodp.autodp_core import Mechanism
 from autodp.mechanism_zoo import GaussianMechanism, zCDP_Mechanism
 from autodp.transformer_zoo import AmplificationBySampling, ComposeGaussian, Composition
 
+from opacus.accountants.analysis import gdp
+
 from .utils import binary_optimize
+
+
+class OpacusSGD(Mechanism):
+    def __init__(
+        self,
+        steps: int,
+        sampling_rate: float,
+        noise_multiplier: Optional[float] = None,
+        target_mu: Optional[float] = None,
+        name: str = "OpacusSGD",
+    ):
+        super().__init__()
+        self.name = name
+        if noise_multiplier and target_mu:
+            raise ValueError("Only one of noise_multiplier and target_mu must be set")
+        if noise_multiplier is None and target_mu is None:
+            raise ValueError("Either noise_multiplier or target_mu must be set")
+        if noise_multiplier is None:
+
+            def sigma_from_mu(mu, steps, sampling_rate):
+                return 1 / (
+                    np.sqrt(
+                        np.log(mu**2 + steps * sampling_rate**2)
+                        - np.log(steps * sampling_rate**2)
+                    )
+                )
+
+            noise_multiplier = sigma_from_mu(target_mu, steps, sampling_rate)
+
+        self.params = {
+            "noise_multiplier": noise_multiplier,
+            "steps": steps,
+            "sampling_rate": sampling_rate,
+        }
+        mu = gdp.compute_mu_poisson(
+            steps=steps,
+            noise_multiplier=noise_multiplier,
+            sample_rate=sampling_rate,
+        )
+        mech = GaussianMechanism(1 / mu)
+        self.set_all_representation(mech)
 
 
 class CoinpressGM(Mechanism):
@@ -28,7 +71,7 @@ class CoinpressGM(Mechanism):
         assert p_sampling <= 1, "p_sampling must be <= 1"
         assert p_sampling > 0, "p_sampling must be positive"
         assert all(p > 0 for p in Ps), "Ps must be positive"
-        self.params = {"Ps": Ps}
+        self.params = {"Ps": Ps, "p_sampling": p_sampling}
         self.name = name
         mechanisms = [GaussianMechanism(1 / math.sqrt(2 * p)) for p in Ps]
         compose = ComposeGaussian()
@@ -91,6 +134,82 @@ class ScaledCoinpressGM(CoinpressGM):
         )
 
 
+class PrototypicalNetwork(Mechanism):
+    def __init__(
+        self,
+        share_projection: float,
+        mu_total: float,
+        proj_sampling_rate: float,
+        proj_steps: int,
+        est_sampling_rate: float,
+        name: str = "PrototypicalNetwork",
+    ):
+        assert share_projection > 0, "share_projection must be > 0"
+        assert share_projection < 1, "share_projection must be < 1"
+        self.name = name
+
+        def mu_projection(share, mu_total):
+            return mu_total * share / (np.sqrt(share**2 + (1 - share) ** 2))
+
+        def sigma_projection(share, mu_total):
+            return 1 / mu_projection(share, mu_total)
+
+        def mu_estimation(share, mu_total):
+            return mu_total * (1 - share) / (np.sqrt(share**2 + (1 - share) ** 2))
+
+        def sigma_estimation(share, mu_total):
+            return 1 / mu_estimation(share, mu_total)
+
+        self.mech_projection = OpacusSGD(
+            target_mu=mu_projection(share_projection, mu_total),
+            steps=proj_steps,
+            sampling_rate=proj_sampling_rate,
+        )
+        rho = mu_estimation(share_projection, mu_total) ** 2 / 2  # convert GDP to zCDP
+        self.mech_estimation = CoinpressGM(
+            [5 / 64 * rho, 7 / 64 * rho, 52 / 64 * rho], p_sampling=est_sampling_rate
+        )
+        mech = Composition()([self.mech_projection, self.mech_estimation], [1, 1])
+        self.set_all_representation(mech)
+
+        self.params = {
+            "share_projection": share_projection,
+            "mu_total": mu_total,
+            "proj_sampling_rate": proj_sampling_rate,
+            "proj_steps": proj_steps,
+            "est_sampling_rate": est_sampling_rate,
+        }
+
+    @classmethod
+    def from_eps_delta(
+        cls,
+        epsilon: float,
+        delta: float,
+        share_projection: float,
+        proj_sampling_rate: float,
+        proj_steps: int,
+        est_sampling_rate: float,
+        verbose: bool = False,
+    ):
+        def obj(mu_total):
+            return cls(
+                share_projection=share_projection,
+                mu_total=mu_total,
+                proj_sampling_rate=proj_sampling_rate,
+                proj_steps=proj_steps,
+                est_sampling_rate=est_sampling_rate,
+            ).get_approxDP(delta)
+
+        mu_total = binary_optimize(obj, epsilon, min_open=True, verbose=verbose)
+        return cls(
+            share_projection=share_projection,
+            mu_total=mu_total,
+            proj_sampling_rate=proj_sampling_rate,
+            proj_steps=proj_steps,
+            est_sampling_rate=est_sampling_rate,
+        )
+
+
 class LeastSquaresCDPM(Mechanism):
     def __init__(self, noise_multiplier, p_sampling: float = 1, name="LeastSquares"):
         assert noise_multiplier > 0, "noise_multiplier must be positive"
@@ -112,7 +231,7 @@ def calibrate_single_param(mechanism_class, epsilon, delta, verbose: bool = Fals
     return mechanism_class(scale)
 
 
-def approxzCDP_to_approxDP(
+def approx_zCDP_to_approxDP(
     rho: float,
     xi: float,
     delta_zcdp: float,
@@ -147,7 +266,7 @@ def approxzCDP_to_approxDP(
         assert delta > 0, "delta must be > 0"
 
         def obj(x):
-            return approxzCDP_to_approxDP(
+            return approx_zCDP_to_approxDP(
                 rho, xi, delta_zcdp, epsilon=x, return_tuple=False
             )
 
