@@ -5,7 +5,6 @@ import numpy as np
 from autodp.autodp_core import Mechanism
 from autodp.mechanism_zoo import GaussianMechanism, zCDP_Mechanism
 from autodp.transformer_zoo import AmplificationBySampling, ComposeGaussian, Composition
-
 from opacus.accountants.analysis import gdp
 
 from .utils import binary_optimize
@@ -200,7 +199,9 @@ class PrototypicalNetwork(Mechanism):
                 est_sampling_rate=est_sampling_rate,
             ).get_approxDP(delta)
 
-        mu_total = binary_optimize(obj, epsilon, min_open=True, verbose=verbose)
+        mu_total = binary_optimize(
+            obj, epsilon, min_open=True, strictly="leq", verbose=verbose
+        )
         return cls(
             share_projection=share_projection,
             mu_total=mu_total,
