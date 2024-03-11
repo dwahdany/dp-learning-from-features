@@ -7,9 +7,9 @@ from lightning import LightningModule
 from lightning.pytorch.utilities.types import (
     STEP_OUTPUT,
 )
-
 from opacus import PrivacyEngine
 from opacus.data_loader import DPDataLoader
+from opacus.utils.batch_memory_manager import BatchSplittingSampler, wrap_data_loader
 
 
 class LinearProbingModel(torch.nn.Module):
@@ -52,7 +52,9 @@ class LinearProbingClassifier(LightningModule):
             # transform (model, optimizer, dataloader) to DP-versions
             if hasattr(self, "dp"):
                 self.dp["model"].remove_hooks()
-            if not isinstance(data_loader, DPDataLoader):
+            if not isinstance(data_loader, DPDataLoader) and not isinstance(
+                data_loader.batch_sampler, BatchSplittingSampler
+            ):
                 warnings.warn(
                     "Dataloader is not DPDataLoader. Manually adjust sampling or privacy guarantees are violated."
                 )
@@ -70,8 +72,18 @@ class LinearProbingClassifier(LightningModule):
                 max_grad_norm=self.max_grad_norm,
                 poisson_sampling=isinstance(data_loader, DPDataLoader),
             )
-            self.dp = {"model": dp_model}
 
+            if hasattr(self.trainer.datamodule, "batch_size_physical"):
+                updated = []
+                for dl in self.trainer.fit_loop._combined_loader.flattened:
+                    new_dl = wrap_data_loader(
+                        data_loader=dl,
+                        max_batch_size=self.trainer.datamodule.batch_size_physical,
+                        optimizer=optimizer,
+                    )
+                    updated.append(new_dl)
+                self.trainer.fit_loop._combined_loader.flattened = updated
+            self.dp = {"model": dp_model}
         return optimizer
 
     def training_step(self, batch, *args: Any, **kwargs: Any) -> STEP_OUTPUT:
