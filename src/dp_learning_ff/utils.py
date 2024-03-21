@@ -39,11 +39,15 @@ def dp_covariance(
     return cov
 
 
-class OptimizationNotFeasibleError(ValueError):
+class OptimizationError(ValueError):
     pass
 
 
-class OptimizationNotConvergedError(RuntimeError):
+class OptimizationNotFeasibleError(OptimizationError):
+    pass
+
+
+class OptimizationNotConvergedError(OptimizationError):
     pass
 
 
