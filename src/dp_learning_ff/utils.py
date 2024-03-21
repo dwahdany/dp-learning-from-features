@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 import numpy as np
 from lightning.pytorch import LightningModule, Trainer
@@ -39,6 +39,14 @@ def dp_covariance(
     return cov
 
 
+class OptimizationNotFeasibleError(ValueError):
+    pass
+
+
+class OptimizationNotConvergedError(RuntimeError):
+    pass
+
+
 def binary_optimize(
     f,
     target: float,
@@ -51,9 +59,19 @@ def binary_optimize(
     max_open: bool = True,
     verbose: bool = False,
     initial: float = 1,
-    initial_step: float = 0.5,
+    initial_step: float = 1e10,
     steps: int = 1000,
 ):
+    if verbose:
+        print(f"target = {target}, strictly = {strictly}")
+        print(f"min_param = {min_param}, min_open = {min_open}")
+        print(f"max_param = {max_param}, max_open = {max_open}")
+        print(f"initial = {initial}")
+        print(f"initial_step = {initial_step}")
+        print(f"steps = {steps}")
+        print(f"abs_tol = {abs_tol}")
+        print(f"rel_tol = {rel_tol}")
+
     def max_violated(x, max_param, max_open):
         """Return true if x is greater than max_param (or equal if max_open is True)
 
@@ -133,6 +151,44 @@ def binary_optimize(
         else:
             return "negative"
 
+    def check_feasibility(
+        f: Callable[[float], float],
+        max_param: float,
+        max_open: bool,
+        min_param: float,
+        min_open: bool,
+        strictly: Literal["none", "lower", "upper", "leq", "geq"],
+        abs_tol: float,
+        rel_tol: float,
+        monotonicity: str,
+    ):
+        sign_f = {"positive": 1, "negative": -1}[monotonicity]
+        highest_param = max_param - 1e-8 if max_open else max_param
+        lowest_param = min_param + 1e-8 if min_open else min_param
+        if verbose:
+            print(f"highest_param = {highest_param}, lowest_param = {lowest_param}")
+            print(
+                f"f(highest_param) = {f(highest_param)}, f(lowest_param) = {f(lowest_param)}"
+            )
+        if (
+            (
+                strictness_ok(f(highest_param), target, strictly)
+                or strictness_ok(f(lowest_param), target, strictly)
+            )
+            and (
+                (f(highest_param) > target - abs_tol)
+                if (sign_f == 1)
+                else (f(highest_param) < target + abs_tol)
+            )
+            and (
+                (f(lowest_param) < target + abs_tol)
+                if (sign_f == 1)
+                else (f(lowest_param) > target - abs_tol)
+            )
+        ):
+            return True
+        return False
+
     x = initial
     step = initial_step
     over = f(x) > target
@@ -143,11 +199,27 @@ def binary_optimize(
         x, max_param, max_open
     ), f"Initial {x} is greater than max_param {max_param} (or equal if max_open is True)"
     f_monotonicity = check_monotonicity(f, max_param, min_param)
+
+    if not check_feasibility(
+        f,
+        max_param,
+        max_open,
+        min_param,
+        min_open,
+        strictly,
+        abs_tol,
+        rel_tol,
+        f_monotonicity,
+    ):
+        raise OptimizationNotFeasibleError("Optimization is not feasible")
+
     it = 0
     while True:
         if verbose:
-            print(f"obj({x}) = {f(x)}")
+            print(f"obj({x}) =", end=" ")
         curr_obj = f(x)
+        if verbose:
+            print(curr_obj)
         if (
             strictness_ok(curr_obj, target, strictly)
             and abs(target - curr_obj) < abs_tol
@@ -170,7 +242,7 @@ def binary_optimize(
             x += step
         it += 1
         if it > steps:
-            raise RuntimeError("binary_optimize did not converge")
+            raise OptimizationNotConvergedError("binary_optimize did not converge")
     return x
 
 
