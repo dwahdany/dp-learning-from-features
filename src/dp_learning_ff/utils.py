@@ -64,7 +64,9 @@ def binary_optimize(
     verbose: bool = False,
     initial: float = 1,
     initial_step: float = 1e10,
-    steps: int = 1000,
+    steps: int = 100,
+    steps_grace: int = 10,
+    accept_non_continuous: bool = False,
 ):
     if verbose:
         print(f"target = {target}, strictly = {strictly}")
@@ -167,8 +169,18 @@ def binary_optimize(
         monotonicity: str,
     ):
         sign_f = {"positive": 1, "negative": -1}[monotonicity]
-        highest_param = max_param - 1e-8 if max_open else max_param
-        lowest_param = min_param + 1e-8 if min_open else min_param
+        highest_param = max_param
+        lowest_param = min_param
+        if max_open:
+            if np.isinf(max_param):
+                highest_param = 1e12
+            else:
+                highest_param = max_param - 1e-8
+        if min_open:
+            if np.isinf(min_param):
+                lowest_param = -1e12
+            else:
+                lowest_param = min_param + 1e-8
         if verbose:
             print(f"highest_param = {highest_param}, lowest_param = {lowest_param}")
             print(
@@ -215,9 +227,14 @@ def binary_optimize(
         rel_tol,
         f_monotonicity,
     ):
+        if verbose:
+            print("Optimization is not feasible")
         raise OptimizationNotFeasibleError("Optimization is not feasible")
 
     it = 0
+    previous_over = np.inf
+    previous_under = -np.inf
+    non_continuous = False
     while True:
         if verbose:
             print(f"obj({x}) =", end=" ")
@@ -236,6 +253,20 @@ def binary_optimize(
                 over = True
             while min_violated(x - step, min_param, min_open):
                 step /= 2
+            if np.isclose(curr_obj, previous_over) and it > steps:
+                if verbose:
+                    print(f"Repeat previous over value {previous_over} at {x}")
+                if not accept_non_continuous:
+                    if verbose:
+                        print("Optimization is not feasible")
+                    raise OptimizationNotFeasibleError("Optimization is not feasible")
+                else:
+                    if non_continuous:
+                        if strictness_ok(curr_obj, target, strictly):
+                            break
+                    else:
+                        non_continuous = True
+            previous_over = curr_obj
             x -= step
         else:
             if over:
@@ -243,9 +274,25 @@ def binary_optimize(
                 over = False
             while max_violated(x + step, max_param, max_open):
                 step /= 2
+            if np.isclose(curr_obj, previous_under) and it > steps:
+                if verbose:
+                    print(f"Repeat previous under value {previous_under} at {x}")
+                if not accept_non_continuous:
+                    if verbose:
+                        print("Optimization is not feasible")
+                    raise OptimizationNotFeasibleError("Optimization is not feasible")
+                else:
+                    if non_continuous:
+                        if strictness_ok(curr_obj, target, strictly):
+                            break
+                    else:
+                        non_continuous = True
+            previous_under = curr_obj
             x += step
         it += 1
-        if it > steps:
+        if it > steps + steps_grace:
+            if verbose:
+                print(f"binary_optimize did not converge after {steps} steps")
             raise OptimizationNotConvergedError("binary_optimize did not converge")
     return x
 
